@@ -1,3 +1,4 @@
+import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -5,6 +6,8 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout, LSTM
 from keras.utils import np_utils
 import re
+import sys
+import time
 
 # Constructs a LSTM Model based on hyperparamters
 # Parameters:
@@ -46,7 +49,7 @@ def construct_lstm_model(input_shape, output_shape, layers = 1, units = [400], d
 
     # Add remaining layers if specified
     for index in np.arange(1, layers):
-        model.add(LSTM(units[index]))
+        model.add(LSTM(units[index], return_sequences = True if (index != layers - 1) else False))
         model.add(Dropout(dropout[index]))
 
     # Add the final layer to make prediction
@@ -60,6 +63,12 @@ def construct_lstm_model(input_shape, output_shape, layers = 1, units = [400], d
 
     return model
 
+def create_log(layers, unit, dropout, output, extended_output):
+
+    entry = str(datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')) + "," + str(layers) + "," + str(unit) + "," + str(dropout) + "," + str(output) + "," + str(extended_output) + "\n"
+
+    return entry
+
 
 # Adapted from:
 #   https://www.analyticsvidhya.com/blog/2018/03/text-generation-using-python-nlp/
@@ -68,6 +77,7 @@ def generate_prediction(model, X, seq_length):
     string_mapped = X
     # generating characters
     for i in range(seq_length):
+        print(string_mapped)
         x = np.reshape(string_mapped,(1,len(string_mapped), 1))
         x = x / float(len(characters))
         pred_index = np.argmax(model.predict(x, verbose=0))
@@ -78,10 +88,15 @@ def generate_prediction(model, X, seq_length):
     print([n_to_char[value] for value in X])
     print([n_to_char[value] for value in string_mapped])
 
-def log():
-    return
+    return [n_to_char[value] for value in string_mapped]
 
 if __name__ == "__main__":
+
+    if (len(sys.argv) <= 1):
+        print("Error: Path of logfile is unspecified.")
+        exit()
+
+    log = open(sys.argv[1], "a+")
 
     X_set = np.load("data/sequences.npy")
     Y_set = np.load("data/next_char.npy")
@@ -92,17 +107,52 @@ if __name__ == "__main__":
     n_to_char = {n:char for n, char in enumerate(characters)}
     char_to_n = {char:n for n, char in enumerate(characters)}
 
-    # Make model
-    model = construct_lstm_model((X_set.shape[1], X_set.shape[2]),
-        Y_set.shape[1], layers = 2, units = [200, 200], dropout = [0.25, 0.25])
-
-    # Model training
-    model.fit(X_set, Y_set, epochs = 1)
-
     X = np.array([50, 68, 65, 1, 62, 78, 61, 74, 64, 1, 74, 65, 83, 1, 73, 61,
-    74, 81, 79]).tolist()
+        74, 81, 79, 63, 78, 69, 76, 80, 1, 66, 75, 78, 1, 61, 1, 74, 65, 83, 1,
+        62, 75, 75, 71, 1, 62, 85, 1, 66, 61, 69, 72, 65, 64]).tolist()
 
-    # Generate prediction
-    generate_prediction(model, X, 19)
+    # Hyperparameter sets
+    layers_set = [2, 3]
+    units = [200, 400]
+    dropouts = [0.15, 0.20]
+
+    for layers in layers_set:
+        for unit in units:
+            for dropout in dropouts:
+
+                print("MODEL layers: " + str(layers) + ", units: " + str(unit)
+                    + ", dropout: " + str(dropout) + "............................")
+
+                # Make model
+                model = construct_lstm_model((X_set.shape[1], X_set.shape[2]),
+                    Y_set.shape[1], layers = layers, units = np.repeat(unit, layers),
+                    dropout = np.repeat(dropout, layers))
+                # Model training
+                model.fit(X_set, Y_set, epochs = 1)
+
+                # Generate prediction
+                output = generate_prediction(model, X, len(X))
+                #extended_output = generate_prediction(model, X, 141)
+
+                #datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+                log.write(create_log(layers, unit, dropout, output, "extended_output"))
+
+    log.close()
+
+    # # Make model
+    # model = construct_lstm_model((X_set.shape[1], X_set.shape[2]),
+    #     Y_set.shape[1], layers = 2, units = [2, 2], dropout = [0.30, 0.30])
+    #
+    # # Model training
+    # print(Y_set.shape)
+    # model.fit(X_set, Y_set, epochs = 1)
+    #
+    # X = np.array([50, 68, 65, 1, 62, 78, 61, 74, 64, 1, 74, 65, 83, 1, 73, 61,
+    #     74, 81, 79, 63, 78, 69, 76, 80, 1, 66, 75, 78, 1, 61, 1, 74, 65, 83, 1,
+    #     62, 75, 75, 71, 1, 62, 85, 1, 66, 61, 69, 72, 65, 64]).tolist()
+    #
+    # # Generate prediction
+    # generate_prediction(model, X, len(X))
+    # generate_prediction(model, X, 141)
 
     # Log result

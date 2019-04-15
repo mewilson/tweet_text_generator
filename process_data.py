@@ -6,6 +6,9 @@ import re
 
 # Note pad_length must be at least 1 greater than seq_length
 
+min_length = 50
+seq_length = 49
+
 # Global Variables
 global_verbose = True # adds print statements to show the data processing
 
@@ -18,7 +21,7 @@ global_verbose = True # adds print statements to show the data processing
 #   @verbose adds print messages to track process
 # Returns:
 #   @tweets is a list of the tweets
-def read_tweets(filename, fraction = 1, min_length = 20, verbose = True):
+def read_tweets(filename, fraction = 1, min_length = min_length, verbose = True):
     # Read in tweets.
     if verbose:
         print("Reading in tweets...")
@@ -130,7 +133,9 @@ def define_char_map(padded_tweets, verbose = True):
 
 # Adapted from:
 #   https://www.analyticsvidhya.com/blog/2018/03/text-generation-using-python-nlp/
-def create_dataset(padded_tweets, n_to_char, char_to_n, characters, seq_length = 19, pad_length = 20, verbose = True):
+def create_dataset(padded_tweets, n_to_char, char_to_n, characters,
+    seq_length = seq_length, pad_length = min_length, verbose = True):
+
     if verbose:
         print("Creating and Encoding data sets...")
 
@@ -174,7 +179,11 @@ def main():
     np.save("data/next_char", Y_set)
     np.save("data/characters", np.asarray(characters))
 
+    print(len(X[1]))
     print(X[1])
+    print([n_to_char[value] for value in X[1]])
+
+
 
     return
 
