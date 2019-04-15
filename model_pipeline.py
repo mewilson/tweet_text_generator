@@ -63,9 +63,9 @@ def construct_lstm_model(input_shape, output_shape, layers = 1, units = [400], d
 
     return model
 
-def create_log(layers, unit, dropout, output, extended_output):
+def create_log(layers, unit, dropout, output, extended_output, epochs):
 
-    entry = str(datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')) + "," + str(layers) + "," + str(unit) + "," + str(dropout) + "," + str(output) + "," + str(extended_output) + "\n"
+    entry = str(datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')) + "," + str(layers) + "," + str(unit) + "," + str(dropout) + "," + str(output) + "," + str(extended_output) + "," + str(epochs) + "\n"
 
     return entry
 
@@ -107,14 +107,15 @@ if __name__ == "__main__":
     n_to_char = {n:char for n, char in enumerate(characters)}
     char_to_n = {char:n for n, char in enumerate(characters)}
 
-    X = np.array([50, 68, 65, 1, 62, 78, 61, 74, 64, 1, 74, 65, 83, 1, 73, 61,
-        74, 81, 79, 63, 78, 69, 76, 80, 1, 66, 75, 78, 1, 61, 1, 74, 65, 83, 1,
-        62, 75, 75, 71, 1, 62, 85, 1, 66, 61, 69, 72, 65, 64]).tolist()
+    # X = np.array([50, 68, 65, 1, 62, 78, 61, 74, 64, 1, 74, 65, 83, 1, 73, 61,
+    #     74, 81, 79, 63, 78, 69, 76, 80, 1, 66, 75, 78, 1, 61, 1, 74, 65, 83, 1,
+    #     62, 75, 75, 71, 1, 62, 85, 1, 66, 61, 69, 72, 65, 64]).tolist()
 
     # Hyperparameter sets
     layers_set = [2, 3]
-    units = [200, 400]
-    dropouts = [0.15, 0.20]
+    units = [200, 400, 600]
+    dropouts = [0.15, 0.20, 0.25]
+    epochs = 20
 
     for layers in layers_set:
         for unit in units:
@@ -128,14 +129,18 @@ if __name__ == "__main__":
                     Y_set.shape[1], layers = layers, units = np.repeat(unit, layers),
                     dropout = np.repeat(dropout, layers))
                 # Model training
-                model.fit(X_set, Y_set, epochs = 1)
+                model.fit(X_set, Y_set, epochs = epochs)
+
+                X = np.array([50, 68, 65, 1, 62, 78, 61, 74, 64, 1, 74, 65, 83, 1, 73, 61,
+                    74, 81, 79, 63, 78, 69, 76, 80, 1, 66, 75, 78, 1, 61, 1, 74, 65, 83, 1,
+                    62, 75, 75, 71, 1, 62, 85, 1, 66, 61, 69, 72, 65, 64]).tolist()
 
                 # Generate prediction
                 output = generate_prediction(model, X, len(X))
                 #extended_output = generate_prediction(model, X, 141)
 
                 #datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-                log.write(create_log(layers, unit, dropout, output, "extended_output"))
+                log.write(create_log(layers, unit, dropout, output, "extended_output", epochs))
 
     log.close()
 
