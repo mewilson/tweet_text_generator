@@ -83,7 +83,7 @@ def generate_prediction(model, X, seq_length):
     string_mapped = X
     # generating characters
     for i in range(seq_length):
-        print(string_mapped)
+        # print(string_mapped)
         x = np.reshape(string_mapped,(1,len(string_mapped), 1))
         x = x / float(len(characters))
         pred_index = np.argmax(model.predict(x, verbose=0))
@@ -118,6 +118,7 @@ if __name__ == "__main__":
     #     62, 75, 75, 71, 1, 62, 85, 1, 66, 61, 69, 72, 65, 64]).tolist()
 
     # Hyperparameter sets
+<<<<<<<
     # !!!! NEVER SET layers_set = [1] , will break.
     # .... need to change logic in construct_lstm_model() to accomodate single layer set
     # .... this would be cool so that we can train models on just one layer to save time
@@ -126,6 +127,12 @@ if __name__ == "__main__":
     units = [100]#[200, 400, 600]
     dropouts = [0.333] #[0.15, 0.20, 0.25]
     epochs = 10 #20
+=======
+    layers_set = [2]
+    units = [300]
+    dropouts = [0.25]
+    epochs = 75
+>>>>>>>
 
     # Call Back Functions
     i = time.strftime("%Y-%m-%d__%H-%M-%S")
