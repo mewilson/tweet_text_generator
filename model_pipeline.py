@@ -5,9 +5,12 @@ import pandas as pd
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, LSTM
 from keras.utils import np_utils
+from keras.callbacks import ModelCheckpoint, EarlyStopping
 import re
 import sys
 import time
+import datetime
+import pickle
 
 # Constructs a LSTM Model based on hyperparamters
 # Parameters:
@@ -56,7 +59,8 @@ def construct_lstm_model(input_shape, output_shape, layers = 1, units = [400], d
     model.add(Dense(output_shape, activation = activation))
 
     # Add loss and optimizer
-    model.compile(loss = 'categorical_crossentropy', optimizer = optimizer)
+    model.compile(loss = 'categorical_crossentropy', optimizer = optimizer,
+                    metrics = ['acc','mae'])
 
     if verbose:
         print(model.summary())
@@ -65,7 +69,9 @@ def construct_lstm_model(input_shape, output_shape, layers = 1, units = [400], d
 
 def create_log(layers, unit, dropout, output, extended_output, epochs):
 
-    entry = str(datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')) + "," + str(layers) + "," + str(unit) + "," + str(dropout) + "," + str(output) + "," + str(extended_output) + "," + str(epochs) + "\n"
+    entry = str(datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')) + \
+            "," + str(layers) + "," + str(unit) + "," + str(dropout) + "," + str(output) + \
+            "," + str(extended_output) + "," + str(epochs) + "\n"
 
     return entry
 
@@ -112,10 +118,21 @@ if __name__ == "__main__":
     #     62, 75, 75, 71, 1, 62, 85, 1, 66, 61, 69, 72, 65, 64]).tolist()
 
     # Hyperparameter sets
-    layers_set = [2, 3]
-    units = [200, 400, 600]
-    dropouts = [0.15, 0.20, 0.25]
-    epochs = 20
+    # !!!! NEVER SET layers_set = [1] , will break.
+    # .... need to change logic in construct_lstm_model() to accomodate single layer set
+    # .... this would be cool so that we can train models on just one layer to save time
+    # .... when testing a new feature or some system configuration
+    layers_set = [8]#[6, 8]
+    units = [100]#[200, 400, 600]
+    dropouts = [0.333] #[0.15, 0.20, 0.25]
+    epochs = 10 #20
+
+    # Call Back Functions
+    i = time.strftime("%Y-%m-%d__%H-%M-%S")
+    filepath = "logs/epoch-{epoch:02d}--loss-{loss:.5f}--time-%s-weights.hdf5" % i
+    model_checkpoint = ModelCheckpoint(filepath = filepath, verbose = 1, monitor = 'loss')
+    early_stopping = EarlyStopping(monitor = 'loss', patience = 5)
+    call_backs = [model_checkpoint, early_stopping]
 
     for layers in layers_set:
         for unit in units:
@@ -129,7 +146,16 @@ if __name__ == "__main__":
                     Y_set.shape[1], layers = layers, units = np.repeat(unit, layers),
                     dropout = np.repeat(dropout, layers))
                 # Model training
-                model.fit(X_set, Y_set, epochs = epochs)
+                history = model.fit(X_set, Y_set, epochs = epochs, callbacks=call_backs, verbose = 1)
+
+                # Save & Backup the Model (Architecture + Weights: Batteries Included)
+                i = time.strftime("%Y-%m-%d__%H-%M-%S")
+                print("the time is: %s" % i)
+                model.save("models/%s.h5" % i)
+
+                # Save the Model History for plotting later
+                with open("pickle_barrel/model-history_%s.pickle" % i, "wb") as out_pickle:
+                    pickle.dump(history, out_pickle, pickle.HIGHEST_PROTOCOL)
 
                 X = np.array([50, 68, 65, 1, 62, 78, 61, 74, 64, 1, 74, 65, 83, 1, 73, 61,
                     74, 81, 79, 63, 78, 69, 76, 80, 1, 66, 75, 78, 1, 61, 1, 74, 65, 83, 1,
