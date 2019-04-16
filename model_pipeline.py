@@ -118,21 +118,10 @@ if __name__ == "__main__":
     #     62, 75, 75, 71, 1, 62, 85, 1, 66, 61, 69, 72, 65, 64]).tolist()
 
     # Hyperparameter sets
-<<<<<<<
-    # !!!! NEVER SET layers_set = [1] , will break.
-    # .... need to change logic in construct_lstm_model() to accomodate single layer set
-    # .... this would be cool so that we can train models on just one layer to save time
-    # .... when testing a new feature or some system configuration
-    layers_set = [8]#[6, 8]
-    units = [100]#[200, 400, 600]
-    dropouts = [0.333] #[0.15, 0.20, 0.25]
-    epochs = 10 #20
-=======
     layers_set = [2]
     units = [300]
     dropouts = [0.25]
     epochs = 75
->>>>>>>
 
     # Call Back Functions
     i = time.strftime("%Y-%m-%d__%H-%M-%S")
